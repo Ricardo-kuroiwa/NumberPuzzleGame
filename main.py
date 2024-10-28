@@ -1,8 +1,8 @@
 import pygame
 import random
-import pyautogui
 from pygame.locals import *
 import math
+import pyautogui
 
 class Tiles:
     def __init__(self, screen, start_position_x, start_position_y, num, mat_pos_x, mat_pos_y):
@@ -158,12 +158,14 @@ def generate_all_states(start_matrix, num_moves=5):
 
     return states
 def reset_game():
-    global move_count, game_over,visited_states, game_over_banner, random_moving, solution_1_moving, last_moved_tile
+    global move_count, game_over,visited_states, game_over_banner, random_moving, solution_1_moving, solution_2_moving, solution_3_moving,last_moved_tile
     move_count = 0
     game_over = False
     game_over_banner = ""
     random_moving = False
     solution_1_moving = False
+    solution_2_moving = False
+    solution_3_moving = False
     last_moved_tile = None  # Redefine o último bloco movido
     visited_states = set()
 
@@ -191,6 +193,7 @@ def make_movent(tile, original_matrix):
     check_mobility()
     move_count += 1
     isGameOver()
+
 def lock_tile_if_correct(tile):
     correct_positions = {
         1: (0, 0),
@@ -205,6 +208,7 @@ def lock_tile_if_correct(tile):
             if tile.num == num and (tile.position_x, tile.position_y) == expected_pos:
                 tile.lock_tile()
                 return  # Sai após bloquear o tile correto
+
 def move_random_tile():
     global last_moved_tile, game_over ,LoopFlag
     if game_over:
@@ -236,16 +240,27 @@ def move_random_tile():
             print("Entrou aqui")
             last_moved_tile = None
             LoopFlag=0
+
 def move_random_tile_2():
     pass
 # Controlar o movimento aleatório
+
 def random_solution():
     global random_moving
     random_moving = True
 # Controlar o movimento da solucao 1
+
 def solution_1():
     global solution_1_moving
     solution_1_moving = True
+
+def solution_2():
+    global solution_2_moving
+    solution_2_moving = True
+
+def solution_3():
+    global solution_3_moving
+    solution_3_moving = True
 
 def print_states(states):
     for state in states:
@@ -278,6 +293,8 @@ game_over_banner = ""
 move_count = 0
 random_moving = False
 solution_1_moving = False
+solution_2_moving = False
+solution_3_moving = False
 LoopFlag = 0
 
 # Button properties
@@ -287,6 +304,8 @@ button_start = pygame.Rect((1000, 60), (button_width, button_height))
 button_mix_number = pygame.Rect((1000, 120), (button_width, button_height))
 button_rect = pygame.Rect((1000, 180), (button_width, button_height))
 button_solution_1 = pygame.Rect((1000, 240), (button_width, button_height))
+button_solution_2 = pygame.Rect((1000, 300), (button_width, button_height))
+button_solution_3 = pygame.Rect((1000, 360), (button_width, button_height))
 
 # Initialize pygame
 pygame.init()
@@ -300,12 +319,14 @@ visited_states = set()
 # Creation of tiles in the puzzle
 create_tiles(False)
 
+
 # Main loop
 running = True
 last_moved_tile = None
 while running:
     screen.fill((47, 49, 51))
     pygame.draw.rect(screen, (247, 235, 235), pygame.Rect(95, 45, 620, 620))
+    
     
     if game_over:
         game_over_print = game_over_font.render(game_over_banner, True, (20, 156, 27))
@@ -317,10 +338,12 @@ while running:
             screen.blit(game_over_print, (950, 600))
             random_moving = False
             solution_1_moving = False
+            solution_2_moving = False
+            solution_3_moving = False
 
     # Render move count
     move_count_render = move_count_font.render("Moves: " + str(move_count), True, (179, 181, 179))
-    screen.blit(move_count_render, (1010, 400))
+    screen.blit(move_count_render, (1010, 500))
 
     # Draw buttons
     #Button Reset
@@ -343,7 +366,18 @@ while running:
     button_solution_1_text = move_count_font.render("Solution 1", True, (255, 255, 255))
     text_solution_1 = button_solution_1_text.get_rect(center=button_solution_1.center)
     screen.blit(button_solution_1_text, text_solution_1)
+
+    pygame.draw.rect(screen, (0, 128, 255), button_solution_2, border_radius=3)
+    button_solution_2_text = move_count_font.render("Solution 2", True, (255, 255, 255))
+    text_solution_2 = button_solution_2_text.get_rect(center=button_solution_2.center)
+    screen.blit(button_solution_2_text, text_solution_2)
     
+    pygame.draw.rect(screen, (0, 128, 255), button_solution_3, border_radius=3)
+    button_solution_3_text = move_count_font.render("Solution 3", True, (255, 255, 255))
+    text_solution_3 = button_solution_3_text.get_rect(center=button_solution_3.center)
+    screen.blit(button_solution_3_text, text_solution_3)
+
+
 
 
     for event in pygame.event.get():
@@ -372,13 +406,37 @@ while running:
                     game_over = True
                     game_over_banner = 'Not Solvable'
                 else:
-                    solution_1()                
+                    solution_1()     
+            elif button_solution_2.collidepoint(x_m_click, y_m_click) and not game_over:
+                #generate_all_states(matrix)
+                isGameOver()
+                print(f'É solucionavel : {isSolveble()}')
+                if isSolveble() and game_over!=True:
+                    game_over = True
+                    game_over_banner = 'Not Solvable'
+                else:
+                    solution_2()  
+
+            elif button_solution_3.collidepoint(x_m_click, y_m_click) and not game_over:
+                #generate_all_states(matrix)
+                isGameOver()
+                print(f'É solucionavel : {isSolveble()}')
+                if isSolveble() and game_over!=True:
+                    game_over = True
+                    game_over_banner = 'Not Solvable'
+                else:
+                    solution_3()             
                
     if random_moving:
         move_random_tile()
         pygame.time.delay(1)  # Delay between moves
     if solution_1_moving:
         generate_all_states(matrix)
+    if solution_2_moving:
+        generate_all_states(matrix)
+    if solution_3_moving:
+        generate_all_states(matrix)
+
         pygame.time.delay(1)  # Delay between moves
     for tile in tiles:
         tile.draw_tile()  # Draw tiles
