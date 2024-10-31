@@ -29,6 +29,7 @@ class Tiles:
     def lock_tile(self):
         self.locked = True
         self.color = (100, 100, 100)  # Change color to indicate it's locked
+    
     def calculate_distance(self):
         ideal = [[1,2,3],[4,5,6],[7,8,'']]
         for i in range(len(ideal)):
@@ -240,6 +241,31 @@ def move_random_tile():
             print("Entrou aqui")
             last_moved_tile = None
             LoopFlag=0
+
+def heuristica_manhattan(tabuleiro, objetivo):
+    distancia = 0
+    for i in range(len(tabuleiro)):
+        for j in range(len(tabuleiro[i])):
+            valor = tabuleiro[i][j]
+            if valor != 0:  # Ignora o espaço vazio
+                objetivo_x, objetivo_y = divmod(objetivo.index(valor), len(tabuleiro))
+                distancia += abs(objetivo_x - i) + abs(objetivo_y - j)
+    return distancia
+
+
+def heuristica_pecas_fora_do_lugar(tabuleiro, objetivo):
+    fora_do_lugar = 0
+    for i in range(len(tabuleiro)):
+        for j in range(len(tabuleiro[i])):
+            if tabuleiro[i][j] != 0 and tabuleiro[i][j] != objetivo[i * len(tabuleiro) + j]:
+                fora_do_lugar += 1
+    return fora_do_lugar
+
+
+def heuristica_personalizada(tabuleiro, objetivo):
+    return heuristica_manhattan(tabuleiro, objetivo) + heuristica_pecas_fora_do_lugar(tabuleiro, objetivo)
+
+
 
 def move_random_tile_2():
     pass
