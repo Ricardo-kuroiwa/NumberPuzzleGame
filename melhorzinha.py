@@ -45,7 +45,7 @@ class Puzzle:
 
     def shuffle(self):
         for _ in range(100):
-            self.move_blank(random.choice(["up", "down", "left", "right"]))
+            self.move_blank(random.choice(["up", "down", "left", "right"]),animate=False)
         self.moves = 0  # Resetar o contador de movimentos
 
     def move_blank(self, direction, animate=True):
@@ -75,7 +75,7 @@ class Puzzle:
             SCREEN.fill(DARK_GRAY)
             self.draw(exclude=(x1, y1))
             draw_text(
-                SCREEN, str(tile_value), FONT, BLACK,
+                SCREEN, " ", FONT, BLACK,
                 OFFSET_X + x1 * TILE_SIZE + dx * (i / TILE_SIZE),
                 OFFSET_Y + y1 * TILE_SIZE + dy * (i / TILE_SIZE)
             )
