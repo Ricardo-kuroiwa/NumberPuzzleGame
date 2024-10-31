@@ -1,12 +1,11 @@
 import pygame
 import random
-import time
 
 # Inicializando o Pygame
 pygame.init()
 
 # Configurações da tela
-WIDTH, HEIGHT = 600, 500
+WIDTH, HEIGHT = 700, 500
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Quebra-Cabeça 3x3")
 
@@ -42,22 +41,57 @@ class Puzzle:
         self.tiles[-1][-1] = 0  # A última peça é o espaço vazio
         self.blank_pos = (TAM - 1, TAM - 1)
         self.moves = 0
+        self.visited_states = set()
 
     def shuffle(self):
         for _ in range(100):
-            self.move_blank(random.choice(["up", "down", "left", "right"]),animate=False)
+            self.move_blank(random.choice(["up", "down", "left", "right"]), animate=False)
         self.moves = 0  # Resetar o contador de movimentos
-
+    def state_key(self):
+        return tuple(tuple(row) for row in self.tiles)
     def move_blank(self, direction, animate=True):
         x, y = self.blank_pos
+
+        # Salva o estado atual antes de fazer qualquer movimento
+        current_state = self.state_key()
+
+        # Verifica se o movimento é válido
         if direction == "up" and y > 0:
-            self.animate_move((x, y), (x, y - 1), animate)
+            new_pos = (x, y - 1)
         elif direction == "down" and y < TAM - 1:
-            self.animate_move((x, y), (x, y + 1), animate)
+            new_pos = (x, y + 1)
         elif direction == "left" and x > 0:
-            self.animate_move((x, y), (x - 1, y), animate)
+            new_pos = (x - 1, y)
         elif direction == "right" and x < TAM - 1:
-            self.animate_move((x, y), (x + 1, y), animate)
+            new_pos = (x + 1, y)
+        else:
+            return  # Movimento inválido
+
+        # Faz a movimentação
+        self.animate_move((x, y), new_pos, animate)
+
+        # Atualiza o estado atual após a movimentação
+        current_state_after = self.state_key()
+    
+        # Verifica se o novo estado já foi visitado
+        if current_state_after in self.visited_states:
+            # Se já visitado, reverte o movimento
+            self.animate_move(new_pos, (x, y), animate)  # Reverte a animação
+            return
+        self.visited_states.add(current_state_after)  # Adiciona o novo estado ao conjunto
+
+    def can_move(self, direction):
+        x, y = self.blank_pos
+        if direction == "up" and y > 0:
+            return True
+        elif direction == "down" and y < TAM - 1:
+            return True
+        elif direction == "left" and x > 0:
+            return True
+        elif direction == "right" and x < TAM - 1:
+            return True
+        return False
+
 
     def animate_move(self, pos1, pos2, animate=True):
         if not animate:
@@ -112,11 +146,14 @@ class Puzzle:
         return misplaced
 
     def random_search(self):
-        for _ in range(20):
-            self.move_blank(random.choice(["up", "down", "left", "right"]))
+        directions = ["up", "down", "left", "right"]
+        valid_moves = [d for d in directions if self.can_move(d)]  # Verifica se o movimento é válido
+        if valid_moves:  # Se houver movimentos válidos
+            direction = random.choice(valid_moves)
+        self.move_blank(direction)
+
 
     def heuristic_one_level(self):
-        # Implementação simples: escolher o movimento que mais reduz a Manhattan Distance
         best_move = None
         best_distance = float('inf')
         for direction in ["up", "down", "left", "right"]:
@@ -129,7 +166,6 @@ class Puzzle:
             self.blank_pos = original_blank_pos
         if best_move:
             self.move_blank(best_move)
-
     def heuristic_two_levels(self):
         # Avalia dois movimentos à frente, somando a Manhattan Distance de ambos
         best_move = None
@@ -156,6 +192,8 @@ class Puzzle:
             self.heuristic_one_level()
         else:
             self.random_search()
+    def is_solved(self):
+        return self.tiles == [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
 
     def draw(self, exclude=None):
         for y in range(TAM):
@@ -169,14 +207,24 @@ class Puzzle:
                     pygame.draw.rect(SCREEN, WHITE, rect, 3)
                     draw_text(SCREEN, str(tile_value), FONT, BLACK, rect.centerx, rect.centery)
 
+    def solve_with_heuristic(self, heuristic, max_moves=10000):
+        for _ in range(max_moves):
+            if self.is_solved():
+                break
+            heuristic()
+            draw_text(SCREEN, f"Movimentos: {self.moves}", FONT_SMALL, WHITE, 100, HEIGHT - 80)
+            pygame.display.flip() 
+            pygame.time.delay(1) 
+           
+
 # Função para desenhar os botões e verificar cliques
 def draw_buttons():
     button_texts = ["Random Search", "Mix Numbers", "Reset", "Heuristic 1", "Heuristic 2", "Personal Heuristic"]
     buttons = []
-    y = 70
+    y = 60
     for i, text in enumerate(button_texts):
         color = GREEN if text == "Mix Numbers" else BLUE
-        rect = pygame.Rect(450, y, 120, 40)
+        rect = pygame.Rect(450, y, 200, 40)
         pygame.draw.rect(SCREEN, color, rect)
         draw_text(SCREEN, text, FONT_SMALL, WHITE, rect.centerx, rect.centery)
         buttons.append((rect, text))  # Armazena o retângulo e o nome do botão
@@ -206,17 +254,20 @@ def main():
                         elif action == "Reset":
                             puzzle.reset()
                         elif action == "Random Search":
-                            puzzle.random_search()
+                            puzzle.solve_with_heuristic(puzzle.random_search)
                         elif action == "Heuristic 1":
-                            puzzle.heuristic_one_level()
+                            puzzle.solve_with_heuristic(puzzle.heuristic_one_level)
                         elif action == "Heuristic 2":
-                            puzzle.heuristic_two_levels()
+                            puzzle.solve_with_heuristic(puzzle.heuristic_two_levels)
                         elif action == "Personal Heuristic":
-                            puzzle.personal_heuristic()
+                            puzzle.solve_with_heuristic(puzzle.personal_heuristic)
 
         # Desenha o quebra-cabeça e exibe o número de movimentos
         puzzle.draw()
         draw_text(SCREEN, f"Moves: {puzzle.moves}", FONT_SMALL, WHITE, 100, HEIGHT - 80)
+        if puzzle.is_solved():
+            draw_text(SCREEN, "Parabéns! Você resolveu o quebra-cabeça!", FONT_SMALL, GREEN, WIDTH // 2, HEIGHT // 2)
+
 
         pygame.display.flip()
         clock.tick(30)
